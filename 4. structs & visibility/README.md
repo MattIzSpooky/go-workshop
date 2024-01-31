@@ -2,5 +2,9 @@
 
  TODO:
 
-By default: camelCase = private
-PascalCase = public
+TODO: type embedding
+
+TODO: visibility
+
+By default: camelCase = private (unexported)
+PascalCase = public (exported)
