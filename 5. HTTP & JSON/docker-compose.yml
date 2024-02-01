@@ -1,0 +1,17 @@
+version: '3'
+services:
+  go-workshop-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-workshop-server
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    tty: true
+    networks:
+      - go-workshop-server
+
+networks:
+  go-workshop-server:
+    driver: bridge
