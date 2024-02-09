@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS authors
+(
+    id   INT GENERATED ALWAYS AS IDENTITY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    bio  text,
+    PRIMARY KEY (id)
+);
