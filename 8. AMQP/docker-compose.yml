@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  artemis:
+    image: apache/activemq-artemis:2.32.0-alpine
+    restart: always
+    environment:
+      - ARTEMIS_USER=artemis # Default
+      - ARTEMIS_PASSWORD=artemis # Default
+    ports:
+      - "61616:61616"
+      - "8161:8161"
+    volumes:
+      - artemis-data:/var/lib/artemis-instance
+    networks:
+      - artemis-network
+
+volumes:
+  artemis-data:
+
+networks:
+  artemis-network:
+    driver: bridge
