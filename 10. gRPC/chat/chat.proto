@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "workshop/chat";
+option java_multiple_files = true;
+option java_package = "com.matthijs.kropholler.chat";
+option java_outer_classname = "Chat";
+
+package chat;
+
+service Chat {
+  rpc GetChatUsers(ChatUsersRequest) returns (ChatUsersReply) {}
+  rpc ListRooms(google.protobuf.Empty) returns (ListRoomsReply) {}
+
+  rpc JoinRoom(JoinRoomRequest) returns (stream ChatMessage) {}
+  rpc SendMessage(stream ChatMessage) returns (MessageAck) {}
+}
+
+message ListRoomsReply {
+  repeated string rooms = 1;
+}
+
+message JoinRoomRequest {
+  string room = 1;
+  string username = 2;
+}
+
+message MessageAck {
+  string status = 1;
+}
+
+message ChatUsersRequest {
+  string room = 1;
+}
+
+message ChatUsersReply {
+  repeated string users = 1;
+}
+
+message ChatMessage {
+  string room = 1;
+  string username = 2;
+  string message = 3;
+  google.protobuf.Timestamp time = 4;
+}
