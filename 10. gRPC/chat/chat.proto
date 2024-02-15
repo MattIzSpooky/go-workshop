@@ -16,6 +16,16 @@ service Chat {
 
   rpc JoinRoom(JoinRoomRequest) returns (stream ChatMessage) {}
   rpc SendMessage(stream ChatMessage) returns (MessageAck) {}
+  rpc DisconnectFromRoom(DisconnectFromRoomMessage) returns (DisconnectFromRoomReply) {}
+}
+
+message DisconnectFromRoomMessage {
+  string room = 1;
+  string username = 2;
+}
+
+message DisconnectFromRoomReply {
+  bool success = 1;
 }
 
 message ListRoomsReply {
