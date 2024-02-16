@@ -27,7 +27,9 @@ type ChatClient interface {
 	ListRooms(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListRoomsReply, error)
 	JoinRoom(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (Chat_JoinRoomClient, error)
 	SendMessage(ctx context.Context, opts ...grpc.CallOption) (Chat_SendMessageClient, error)
-	DisconnectFromRoom(ctx context.Context, in *DisconnectFromRoomMessage, opts ...grpc.CallOption) (*DisconnectFromRoomReply, error)
+	DisconnectFromRoom(ctx context.Context, in *DisconnectFromRoomMessage, opts ...grpc.CallOption) (*SuccessReply, error)
+	NotifyDisconnect(ctx context.Context, in *NotifyDisconnectRequest, opts ...grpc.CallOption) (*SuccessReply, error)
+	NotifyJoin(ctx context.Context, in *NotifyJoinMessage, opts ...grpc.CallOption) (*SuccessReply, error)
 }
 
 type chatClient struct {
@@ -122,9 +124,27 @@ func (x *chatSendMessageClient) CloseAndRecv() (*MessageAck, error) {
 	return m, nil
 }
 
-func (c *chatClient) DisconnectFromRoom(ctx context.Context, in *DisconnectFromRoomMessage, opts ...grpc.CallOption) (*DisconnectFromRoomReply, error) {
-	out := new(DisconnectFromRoomReply)
+func (c *chatClient) DisconnectFromRoom(ctx context.Context, in *DisconnectFromRoomMessage, opts ...grpc.CallOption) (*SuccessReply, error) {
+	out := new(SuccessReply)
 	err := c.cc.Invoke(ctx, "/chat.Chat/DisconnectFromRoom", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatClient) NotifyDisconnect(ctx context.Context, in *NotifyDisconnectRequest, opts ...grpc.CallOption) (*SuccessReply, error) {
+	out := new(SuccessReply)
+	err := c.cc.Invoke(ctx, "/chat.Chat/NotifyDisconnect", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatClient) NotifyJoin(ctx context.Context, in *NotifyJoinMessage, opts ...grpc.CallOption) (*SuccessReply, error) {
+	out := new(SuccessReply)
+	err := c.cc.Invoke(ctx, "/chat.Chat/NotifyJoin", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +159,9 @@ type ChatServer interface {
 	ListRooms(context.Context, *emptypb.Empty) (*ListRoomsReply, error)
 	JoinRoom(*JoinRoomRequest, Chat_JoinRoomServer) error
 	SendMessage(Chat_SendMessageServer) error
-	DisconnectFromRoom(context.Context, *DisconnectFromRoomMessage) (*DisconnectFromRoomReply, error)
+	DisconnectFromRoom(context.Context, *DisconnectFromRoomMessage) (*SuccessReply, error)
+	NotifyDisconnect(context.Context, *NotifyDisconnectRequest) (*SuccessReply, error)
+	NotifyJoin(context.Context, *NotifyJoinMessage) (*SuccessReply, error)
 	mustEmbedUnimplementedChatServer()
 }
 
@@ -159,8 +181,14 @@ func (UnimplementedChatServer) JoinRoom(*JoinRoomRequest, Chat_JoinRoomServer) e
 func (UnimplementedChatServer) SendMessage(Chat_SendMessageServer) error {
 	return status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
 }
-func (UnimplementedChatServer) DisconnectFromRoom(context.Context, *DisconnectFromRoomMessage) (*DisconnectFromRoomReply, error) {
+func (UnimplementedChatServer) DisconnectFromRoom(context.Context, *DisconnectFromRoomMessage) (*SuccessReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DisconnectFromRoom not implemented")
+}
+func (UnimplementedChatServer) NotifyDisconnect(context.Context, *NotifyDisconnectRequest) (*SuccessReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NotifyDisconnect not implemented")
+}
+func (UnimplementedChatServer) NotifyJoin(context.Context, *NotifyJoinMessage) (*SuccessReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NotifyJoin not implemented")
 }
 func (UnimplementedChatServer) mustEmbedUnimplementedChatServer() {}
 
@@ -276,6 +304,42 @@ func _Chat_DisconnectFromRoom_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Chat_NotifyDisconnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotifyDisconnectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServer).NotifyDisconnect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chat.Chat/NotifyDisconnect",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServer).NotifyDisconnect(ctx, req.(*NotifyDisconnectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Chat_NotifyJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotifyJoinMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServer).NotifyJoin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chat.Chat/NotifyJoin",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServer).NotifyJoin(ctx, req.(*NotifyJoinMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Chat_ServiceDesc is the grpc.ServiceDesc for Chat service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -294,6 +358,14 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DisconnectFromRoom",
 			Handler:    _Chat_DisconnectFromRoom_Handler,
+		},
+		{
+			MethodName: "NotifyDisconnect",
+			Handler:    _Chat_NotifyDisconnect_Handler,
+		},
+		{
+			MethodName: "NotifyJoin",
+			Handler:    _Chat_NotifyJoin_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

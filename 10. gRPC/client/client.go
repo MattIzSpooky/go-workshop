@@ -26,7 +26,6 @@ var debugEnabled = flag.Bool("debug", false, "Enabled/disable debug logging")
 const defaultRoomName = "default"
 
 func joinChannel(ctx context.Context, client chat.ChatClient, room string) {
-
 	joinRoomRequest := chat.JoinRoomRequest{Room: room, Username: *username}
 	stream, err := client.JoinRoom(ctx, &joinRoomRequest)
 	if err != nil {
@@ -168,7 +167,17 @@ func main() {
 	go joinChannel(ctx, client, room)
 	go writeAndSendMessages(ctx, client, room)
 
+	_, err = client.NotifyJoin(ctx, &chat.NotifyJoinMessage{
+		Room:     room,
+		Username: *username,
+	})
+
 	<-sigChan
+
+	_, err = client.NotifyDisconnect(ctx, &chat.NotifyDisconnectRequest{
+		Room:     room,
+		Username: *username,
+	})
 
 	_, err = client.DisconnectFromRoom(ctx, &chat.DisconnectFromRoomMessage{
 		Room:     room,

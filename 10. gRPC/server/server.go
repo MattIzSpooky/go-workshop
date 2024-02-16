@@ -131,7 +131,47 @@ func (s *chatServer) ListRooms(ctx context.Context, empty *emptypb.Empty) (*chat
 	return &chat.ListRoomsReply{Rooms: rooms}, nil
 }
 
-func (s *chatServer) DisconnectFromRoom(ctx context.Context, disconnectFromRoomMessage *chat.DisconnectFromRoomMessage) (*chat.DisconnectFromRoomReply, error) {
+func (s *chatServer) NotifyDisconnect(ctx context.Context, notifyDisconnectMessage *chat.NotifyDisconnectRequest) (*chat.SuccessReply, error) {
+	s.Lock()
+	idx := slices.IndexFunc(s.rooms, func(c chatRoom) bool { return c.name == notifyDisconnectMessage.GetRoom() })
+	currRoom := &s.rooms[idx]
+	s.Unlock()
+
+	notifyJoinMsg := &chat.ChatMessage{
+		Room:     currRoom.name,
+		Username: "SYSTEM",
+		Message:  fmt.Sprintf("User [%s] has disconnected.", notifyDisconnectMessage.GetUsername()),
+		Time:     timestamppb.New(time.Now()),
+	}
+
+	for _, user := range currRoom.users {
+		user.msgChannel <- notifyJoinMsg
+	}
+
+	return &chat.SuccessReply{Success: true}, nil
+}
+
+func (s *chatServer) NotifyJoin(ctx context.Context, notifyJoinMessage *chat.NotifyJoinMessage) (*chat.SuccessReply, error) {
+	s.Lock()
+	idx := slices.IndexFunc(s.rooms, func(c chatRoom) bool { return c.name == notifyJoinMessage.GetRoom() })
+	currRoom := &s.rooms[idx]
+	s.Unlock()
+
+	notifyJoinMsg := &chat.ChatMessage{
+		Room:     currRoom.name,
+		Username: "SYSTEM",
+		Message:  fmt.Sprintf("User [%s] has joined the room.", notifyJoinMessage.GetUsername()),
+		Time:     timestamppb.New(time.Now()),
+	}
+
+	for _, user := range currRoom.users {
+		user.msgChannel <- notifyJoinMsg
+	}
+
+	return &chat.SuccessReply{Success: true}, nil
+}
+
+func (s *chatServer) DisconnectFromRoom(ctx context.Context, disconnectFromRoomMessage *chat.DisconnectFromRoomMessage) (*chat.SuccessReply, error) {
 	s.Lock()
 	idx := slices.IndexFunc(s.rooms, func(c chatRoom) bool { return c.name == disconnectFromRoomMessage.GetRoom() })
 	currRoom := &s.rooms[idx]
@@ -141,28 +181,16 @@ func (s *chatServer) DisconnectFromRoom(ctx context.Context, disconnectFromRoomM
 	usersIdx := slices.IndexFunc(currRoom.users, func(u user) bool { return u.name == disconnectFromRoomMessage.GetUsername() })
 
 	if usersIdx == -1 {
-		return &chat.DisconnectFromRoomReply{Success: false}, fmt.Errorf("User does not exist: %s", disconnectFromRoomMessage.GetUsername())
+		return &chat.SuccessReply{Success: false}, fmt.Errorf("User does not exist: %s", disconnectFromRoomMessage.GetUsername())
 	}
 
 	currentUser := currRoom.users[usersIdx]
-
-	disconnectMsg := &chat.ChatMessage{
-		Room:     currRoom.name,
-		Username: "SYSTEM",
-		Message:  fmt.Sprintf("User [%s] is disconnecting.", currentUser.name),
-		Time:     timestamppb.New(time.Now()),
-	}
-
-	for _, user := range currRoom.users {
-		user.msgChannel <- disconnectMsg
-	}
-
 	close(currentUser.msgChannel)
 	currRoom.users = slices.Delete(currRoom.users, usersIdx, usersIdx+1)
 
 	currRoom.lock.Unlock()
 
-	return &chat.DisconnectFromRoomReply{Success: true}, nil
+	return &chat.SuccessReply{Success: true}, nil
 }
 
 func (s *chatServer) GetChatUsers(ctx context.Context, chatUsersRequest *chat.ChatUsersRequest) (*chat.ChatUsersReply, error) {
