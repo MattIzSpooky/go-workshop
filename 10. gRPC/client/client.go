@@ -50,9 +50,17 @@ func joinChannel(ctx context.Context, client chat.ChatClient, room string) {
 				log.Fatalf("Failed to receive message from channel joining. \nErr: %v", err)
 			}
 
-			if *username != in.GetUsername() {
-				fmt.Println(fmt.Sprintf("[%s]: (%s) -> %s", color.MagentaString(in.GetRoom()), color.GreenString(in.GetUsername()), color.CyanString(in.GetMessage())))
+			userString := color.GreenString(in.GetUsername())
+			if *username == in.GetUsername() {
+				userString = color.HiMagentaString(in.GetUsername())
 			}
+
+			fmt.Println(fmt.Sprintf("[%s >> %s]: (%s) -> %s",
+				color.HiMagentaString(in.Time.AsTime().Format("2006-01-02T15:04:05 -07000")),
+				color.MagentaString(in.GetRoom()),
+				userString,
+				color.CyanString(in.GetMessage())),
+			)
 		}
 	}()
 

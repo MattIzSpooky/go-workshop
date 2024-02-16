@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
 	"log"
 	"net"
 	"slices"
 	"sync"
+	"time"
 	"workshop/grpc/chat"
 )
 
@@ -19,7 +21,7 @@ var debugEnabled = flag.Bool("debug", false, "Enabled/disable debug logging")
 var port = flag.Int("port", 8080, "The port for the chat server to start listening on")
 
 type chatRoom struct {
-	lock sync.Mutex
+	lock *sync.Mutex
 	name string
 	//users       []string
 	//msgChannels []chan *chat.ChatMessage
@@ -46,7 +48,7 @@ func (s *chatServer) JoinRoom(joinRequest *chat.JoinRoomRequest, msgStream chat.
 	// If room does not exist, create room.
 	if idx == -1 {
 		fmt.Println(fmt.Sprintf("Room [%s] does not exist. Creating room", joinRequest.GetRoom()))
-		s.rooms = append(s.rooms, chatRoom{name: joinRequest.GetRoom(), lock: sync.Mutex{}})
+		s.rooms = append(s.rooms, chatRoom{name: joinRequest.GetRoom(), lock: &sync.Mutex{}})
 	}
 
 	// Check if the current username is already used.
@@ -68,10 +70,12 @@ func (s *chatServer) JoinRoom(joinRequest *chat.JoinRoomRequest, msgStream chat.
 		name:       joinRequest.GetUsername(),
 		msgChannel: msgChannel,
 	})
+
 	s.Unlock()
 
 	for {
 		select {
+
 		case <-msgStream.Context().Done():
 			return nil
 		case msg := <-msgChannel:
@@ -100,9 +104,10 @@ func (s *chatServer) SendMessage(msgStream chat.Chat_SendMessageServer) error {
 
 	s.Lock()
 	idx := slices.IndexFunc(s.rooms, func(c chatRoom) bool { return c.name == msg.GetRoom() })
+	currRoom := &s.rooms[idx]
 	s.Unlock()
 
-	currRoom := &s.rooms[idx]
+	msg.Time = timestamppb.New(time.Now())
 
 	go func() {
 		// When a message comes in, send it to all recipients in the room
@@ -140,6 +145,17 @@ func (s *chatServer) DisconnectFromRoom(ctx context.Context, disconnectFromRoomM
 	}
 
 	currentUser := currRoom.users[usersIdx]
+
+	disconnectMsg := &chat.ChatMessage{
+		Room:     currRoom.name,
+		Username: "SYSTEM",
+		Message:  fmt.Sprintf("User [%s] is disconnecting.", currentUser.name),
+		Time:     timestamppb.New(time.Now()),
+	}
+
+	for _, user := range currRoom.users {
+		user.msgChannel <- disconnectMsg
+	}
 
 	close(currentUser.msgChannel)
 	currRoom.users = slices.Delete(currRoom.users, usersIdx, usersIdx+1)
