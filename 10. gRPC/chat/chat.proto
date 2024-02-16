@@ -19,6 +19,10 @@ service Chat {
   rpc DisconnectFromRoom(DisconnectFromRoomMessage) returns (SuccessReply) {}
   rpc NotifyDisconnect(NotifyDisconnectRequest) returns (SuccessReply) {}
   rpc NotifyJoin(NotifyJoinMessage) returns (SuccessReply) {}
+  rpc CheckRoomExists(CheckRoomExistsMessage) returns (SuccessReply) {}
+}
+message CheckRoomExistsMessage {
+  string room = 1;
 }
 
 message NotifyJoinMessage {

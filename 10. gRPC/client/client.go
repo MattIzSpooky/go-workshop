@@ -16,6 +16,7 @@ import (
 	"slices"
 	"sync"
 	"syscall"
+	"time"
 	"workshop/grpc/chat"
 )
 
@@ -40,26 +41,31 @@ func joinChannel(ctx context.Context, client chat.ChatClient, room string) {
 	// TODO: split this to another function
 	go func() {
 		for {
-			in, err := stream.Recv()
-			if err == io.EOF {
-				wg.Done()
+			select {
+			case <-stream.Context().Done():
 				return
-			}
-			if err != nil {
-				log.Fatalf("Failed to receive message from channel joining. \nErr: %v", err)
-			}
+			default:
+				in, err := stream.Recv()
+				if err == io.EOF {
+					wg.Done()
+					return
+				}
+				if err != nil {
+					log.Fatalf("Failed to receive message from channel joining. \nErr: %v", err)
+				}
 
-			userString := color.GreenString(in.GetUsername())
-			if *username == in.GetUsername() {
-				userString = color.HiMagentaString(in.GetUsername())
-			}
+				userString := color.GreenString(in.GetUsername())
+				if *username == in.GetUsername() {
+					userString = color.HiMagentaString(in.GetUsername())
+				}
 
-			fmt.Println(fmt.Sprintf("[%s >> %s]: (%s) -> %s",
-				color.HiMagentaString(in.Time.AsTime().Format("2006-01-02T15:04:05 -07000")),
-				color.MagentaString(in.GetRoom()),
-				userString,
-				color.CyanString(in.GetMessage())),
-			)
+				fmt.Println(fmt.Sprintf("[%s >> %s]: (%s) -> %s",
+					color.HiMagentaString(in.Time.AsTime().Format("2006-01-02T15:04:05 -07000")),
+					color.MagentaString(in.GetRoom()),
+					userString,
+					color.CyanString(in.GetMessage())),
+				)
+			}
 		}
 	}()
 
@@ -165,6 +171,8 @@ func main() {
 	)
 
 	go joinChannel(ctx, client, room)
+	pollRoomExists(client, ctx, room)
+
 	go writeAndSendMessages(ctx, client, room)
 
 	_, err = client.NotifyJoin(ctx, &chat.NotifyJoinMessage{
@@ -189,10 +197,23 @@ func main() {
 	exitOnError(conn.Close())
 }
 
+func pollRoomExists(client chat.ChatClient, ctx context.Context, room string) {
+	for {
+		result, _ := client.CheckRoomExists(ctx, &chat.CheckRoomExistsMessage{Room: room})
+
+		if result.Success {
+			break
+		}
+
+		time.Sleep(250 * time.Millisecond)
+	}
+}
+
 func writeAndSendMessages(ctx context.Context, client chat.ChatClient, room string) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		go sendMessage(ctx, client, room, scanner.Text())
+		fmt.Print("\033[1A\033[K")
 	}
 }
 

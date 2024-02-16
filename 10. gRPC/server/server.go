@@ -54,7 +54,7 @@ func (s *chatServer) JoinRoom(joinRequest *chat.JoinRoomRequest, msgStream chat.
 	// Check if the current username is already used.
 	for _, r := range s.rooms {
 		usersIdx := slices.IndexFunc(r.users, func(u user) bool { return u.name == joinRequest.GetUsername() })
-		if usersIdx != -1 {
+		if usersIdx > -1 {
 			s.Unlock()
 			user := &r.users[usersIdx]
 			return fmt.Errorf("username [%s] cannot be used. It is used in room [%s]", user.name, r.name)
@@ -73,9 +73,25 @@ func (s *chatServer) JoinRoom(joinRequest *chat.JoinRoomRequest, msgStream chat.
 
 	s.Unlock()
 
+	////for {
+	////	select {
+	////	case <-msgStream.Context().Done():
+	////		return nil
+	////	case msg := <-msgChannel:
+	////		if *debugEnabled {
+	////			fmt.Printf("Got message: %v \n", msg)
+	////		}
+	////
+	////		msgStream.SendMsg(msg)
+	////	}
+	////}
+	//return s.listenForMessages(msgStream, msgChannel)
+	return s.listenForMessages(msgStream, msgChannel)
+}
+
+func (s *chatServer) listenForMessages(msgStream chat.Chat_JoinRoomServer, msgChannel chan *chat.ChatMessage) error {
 	for {
 		select {
-
 		case <-msgStream.Context().Done():
 			return nil
 		case msg := <-msgChannel:
@@ -137,7 +153,7 @@ func (s *chatServer) NotifyDisconnect(ctx context.Context, notifyDisconnectMessa
 	currRoom := &s.rooms[idx]
 	s.Unlock()
 
-	notifyJoinMsg := &chat.ChatMessage{
+	notifyDisconnectMsg := &chat.ChatMessage{
 		Room:     currRoom.name,
 		Username: "SYSTEM",
 		Message:  fmt.Sprintf("User [%s] has disconnected.", notifyDisconnectMessage.GetUsername()),
@@ -145,7 +161,19 @@ func (s *chatServer) NotifyDisconnect(ctx context.Context, notifyDisconnectMessa
 	}
 
 	for _, user := range currRoom.users {
-		user.msgChannel <- notifyJoinMsg
+		user.msgChannel <- notifyDisconnectMsg
+	}
+
+	return &chat.SuccessReply{Success: true}, nil
+}
+
+func (s *chatServer) CheckRoomExists(ctx context.Context, checkRoomExistsMessage *chat.CheckRoomExistsMessage) (*chat.SuccessReply, error) {
+	//s.Lock()
+	idx := slices.IndexFunc(s.rooms, func(c chatRoom) bool { return c.name == checkRoomExistsMessage.GetRoom() })
+	//s.Unlock()
+
+	if idx == -1 {
+		return &chat.SuccessReply{Success: false}, nil
 	}
 
 	return &chat.SuccessReply{Success: true}, nil

@@ -30,6 +30,7 @@ type ChatClient interface {
 	DisconnectFromRoom(ctx context.Context, in *DisconnectFromRoomMessage, opts ...grpc.CallOption) (*SuccessReply, error)
 	NotifyDisconnect(ctx context.Context, in *NotifyDisconnectRequest, opts ...grpc.CallOption) (*SuccessReply, error)
 	NotifyJoin(ctx context.Context, in *NotifyJoinMessage, opts ...grpc.CallOption) (*SuccessReply, error)
+	CheckRoomExists(ctx context.Context, in *CheckRoomExistsMessage, opts ...grpc.CallOption) (*SuccessReply, error)
 }
 
 type chatClient struct {
@@ -151,6 +152,15 @@ func (c *chatClient) NotifyJoin(ctx context.Context, in *NotifyJoinMessage, opts
 	return out, nil
 }
 
+func (c *chatClient) CheckRoomExists(ctx context.Context, in *CheckRoomExistsMessage, opts ...grpc.CallOption) (*SuccessReply, error) {
+	out := new(SuccessReply)
+	err := c.cc.Invoke(ctx, "/chat.Chat/CheckRoomExists", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServer is the server API for Chat service.
 // All implementations must embed UnimplementedChatServer
 // for forward compatibility
@@ -162,6 +172,7 @@ type ChatServer interface {
 	DisconnectFromRoom(context.Context, *DisconnectFromRoomMessage) (*SuccessReply, error)
 	NotifyDisconnect(context.Context, *NotifyDisconnectRequest) (*SuccessReply, error)
 	NotifyJoin(context.Context, *NotifyJoinMessage) (*SuccessReply, error)
+	CheckRoomExists(context.Context, *CheckRoomExistsMessage) (*SuccessReply, error)
 	mustEmbedUnimplementedChatServer()
 }
 
@@ -189,6 +200,9 @@ func (UnimplementedChatServer) NotifyDisconnect(context.Context, *NotifyDisconne
 }
 func (UnimplementedChatServer) NotifyJoin(context.Context, *NotifyJoinMessage) (*SuccessReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyJoin not implemented")
+}
+func (UnimplementedChatServer) CheckRoomExists(context.Context, *CheckRoomExistsMessage) (*SuccessReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckRoomExists not implemented")
 }
 func (UnimplementedChatServer) mustEmbedUnimplementedChatServer() {}
 
@@ -340,6 +354,24 @@ func _Chat_NotifyJoin_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Chat_CheckRoomExists_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckRoomExistsMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServer).CheckRoomExists(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chat.Chat/CheckRoomExists",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServer).CheckRoomExists(ctx, req.(*CheckRoomExistsMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Chat_ServiceDesc is the grpc.ServiceDesc for Chat service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -366,6 +398,10 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NotifyJoin",
 			Handler:    _Chat_NotifyJoin_Handler,
+		},
+		{
+			MethodName: "CheckRoomExists",
+			Handler:    _Chat_CheckRoomExists_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
