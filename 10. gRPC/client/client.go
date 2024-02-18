@@ -14,7 +14,6 @@ import (
 	"os"
 	"os/signal"
 	"slices"
-	"sync"
 	"syscall"
 	"time"
 	"workshop/grpc/chat"
@@ -26,51 +25,50 @@ var debugEnabled = flag.Bool("debug", false, "Enabled/disable debug logging")
 
 const defaultRoomName = "default"
 
-func joinChannel(ctx context.Context, client chat.ChatClient, room string) {
+func listenToMessages(ctx context.Context, client chat.ChatClient, room string) {
 	joinRoomRequest := chat.JoinRoomRequest{Room: room, Username: *username}
-	stream, err := client.JoinRoom(ctx, &joinRoomRequest)
+	stream, err := client.ListenToRoom(ctx, &joinRoomRequest)
+
 	if err != nil {
-		log.Fatalf("client.JoinChannel(ctx, &channel) throws: %v", err)
+		log.Fatalf("listenToMessages() failed.")
 	}
 
-	fmt.Printf("Joined room: %v \n", room)
-
-	wg := new(sync.WaitGroup)
-	wg.Add(1)
-
-	// TODO: split this to another function
-	go func() {
-		for {
-			select {
-			case <-stream.Context().Done():
+	for {
+		select {
+		case <-stream.Context().Done():
+			return
+		default:
+			in, err := stream.Recv()
+			if err == io.EOF {
+				//wg.Done()
 				return
-			default:
-				in, err := stream.Recv()
-				if err == io.EOF {
-					wg.Done()
-					return
-				}
-				if err != nil {
-					log.Fatalf("Failed to receive message from channel joining. \nErr: %v", err)
-				}
-
-				userString := color.GreenString(in.GetUsername())
-				if *username == in.GetUsername() {
-					userString = color.HiMagentaString(in.GetUsername())
-				}
-
-				fmt.Println(fmt.Sprintf("[%s >> %s]: (%s) -> %s",
-					color.HiMagentaString(in.Time.AsTime().Format("2006-01-02T15:04:05 -07000")),
-					color.MagentaString(in.GetRoom()),
-					userString,
-					color.CyanString(in.GetMessage())),
-				)
 			}
-		}
-	}()
+			if err != nil {
+				//wg.Done()
+				return
+				//log.Fatalf("Failed to receive message from channel joining. \nErr: %v", err)
+			}
 
-	// Block until no more messages can be read.
-	wg.Wait()
+			userString := color.GreenString(in.GetUsername())
+			if *username == in.GetUsername() {
+				userString = color.HiMagentaString(in.GetUsername())
+			}
+
+			fmt.Println(fmt.Sprintf("[%s >> %s]: (%s) -> %s",
+				color.HiMagentaString(in.Time.AsTime().Format("2006-01-02T15:04:05 -07000")),
+				color.MagentaString(in.GetRoom()),
+				userString,
+				color.CyanString(in.GetMessage())),
+			)
+		}
+	}
+}
+
+func joinChannel(ctx context.Context, client chat.ChatClient, room string) error {
+	joinRoomRequest := chat.JoinRoomRequest{Room: room, Username: *username}
+	_, err := client.JoinRoom(ctx, &joinRoomRequest)
+
+	return err
 }
 
 func sendMessage(ctx context.Context, client chat.ChatClient, room string, message string) {
@@ -170,9 +168,11 @@ func main() {
 		syscall.SIGHUP,
 	)
 
-	go joinChannel(ctx, client, room)
+	err = joinChannel(ctx, client, room)
+	exitOnError(err)
 	pollRoomExists(client, ctx, room)
 
+	go listenToMessages(ctx, client, room)
 	go writeAndSendMessages(ctx, client, room)
 
 	_, err = client.NotifyJoin(ctx, &chat.NotifyJoinMessage{

@@ -21,10 +21,8 @@ var debugEnabled = flag.Bool("debug", false, "Enabled/disable debug logging")
 var port = flag.Int("port", 8080, "The port for the chat server to start listening on")
 
 type chatRoom struct {
-	lock *sync.Mutex
-	name string
-	//users       []string
-	//msgChannels []chan *chat.ChatMessage
+	lock  *sync.Mutex
+	name  string
 	users []user
 }
 
@@ -40,14 +38,39 @@ type chatServer struct {
 	rooms []chatRoom
 }
 
-func (s *chatServer) JoinRoom(joinRequest *chat.JoinRoomRequest, msgStream chat.Chat_JoinRoomServer) error {
+func (s *chatServer) ListenToRoom(joinRequest *chat.JoinRoomRequest, msgStream chat.Chat_ListenToRoomServer) error {
+	s.Lock()
+	idx := slices.IndexFunc(s.rooms, func(c chatRoom) bool { return c.name == joinRequest.GetRoom() })
+	currRoom := &s.rooms[idx]
+	usersIdx := slices.IndexFunc(currRoom.users, func(u user) bool { return u.name == joinRequest.GetUsername() })
+	user := &currRoom.users[usersIdx]
+	s.Unlock()
+
+	for {
+		select {
+		case <-msgStream.Context().Done():
+			return nil
+		case msg := <-user.msgChannel:
+			s.printDebug(fmt.Sprintf("Got message: %v \n", msg))
+			msgStream.SendMsg(msg)
+		}
+	}
+}
+
+func (s *chatServer) printDebug(message string) {
+	if *debugEnabled {
+		fmt.Println(message)
+	}
+}
+
+func (s *chatServer) JoinRoom(ctx context.Context, joinRequest *chat.JoinRoomRequest) (*chat.SuccessReply, error) {
 	s.Lock()
 
 	idx := slices.IndexFunc(s.rooms, func(c chatRoom) bool { return c.name == joinRequest.GetRoom() })
 
 	// If room does not exist, create room.
 	if idx == -1 {
-		fmt.Println(fmt.Sprintf("Room [%s] does not exist. Creating room", joinRequest.GetRoom()))
+		s.printDebug(fmt.Sprintf("Room [%s] does not exist. Creating room", joinRequest.GetRoom()))
 		s.rooms = append(s.rooms, chatRoom{name: joinRequest.GetRoom(), lock: &sync.Mutex{}})
 	}
 
@@ -57,13 +80,18 @@ func (s *chatServer) JoinRoom(joinRequest *chat.JoinRoomRequest, msgStream chat.
 		if usersIdx > -1 {
 			s.Unlock()
 			user := &r.users[usersIdx]
-			return fmt.Errorf("username [%s] cannot be used. It is used in room [%s]", user.name, r.name)
+			errorMsg := fmt.Sprintf("username [%s] cannot be used. It is used in room [%s]", user.name, r.name)
+			s.printDebug(errorMsg)
+
+			return &chat.SuccessReply{Success: false}, errors.New(errorMsg)
 		}
 	}
 
 	idx = slices.IndexFunc(s.rooms, func(c chatRoom) bool { return c.name == joinRequest.GetRoom() })
 
 	msgChannel := make(chan *chat.ChatMessage)
+
+	s.printDebug(fmt.Sprintf("User [%s] joined room [%s]", joinRequest.GetUsername(), joinRequest.GetRoom()))
 
 	currRoom := &s.rooms[idx]
 	currRoom.users = append(currRoom.users, user{
@@ -73,35 +101,7 @@ func (s *chatServer) JoinRoom(joinRequest *chat.JoinRoomRequest, msgStream chat.
 
 	s.Unlock()
 
-	////for {
-	////	select {
-	////	case <-msgStream.Context().Done():
-	////		return nil
-	////	case msg := <-msgChannel:
-	////		if *debugEnabled {
-	////			fmt.Printf("Got message: %v \n", msg)
-	////		}
-	////
-	////		msgStream.SendMsg(msg)
-	////	}
-	////}
-	//return s.listenForMessages(msgStream, msgChannel)
-	return s.listenForMessages(msgStream, msgChannel)
-}
-
-func (s *chatServer) listenForMessages(msgStream chat.Chat_JoinRoomServer, msgChannel chan *chat.ChatMessage) error {
-	for {
-		select {
-		case <-msgStream.Context().Done():
-			return nil
-		case msg := <-msgChannel:
-			if *debugEnabled {
-				fmt.Printf("Got message: %v \n", msg)
-			}
-
-			msgStream.SendMsg(msg)
-		}
-	}
+	return &chat.SuccessReply{Success: true}, nil
 }
 
 func (s *chatServer) SendMessage(msgStream chat.Chat_SendMessageServer) error {
@@ -135,7 +135,7 @@ func (s *chatServer) SendMessage(msgStream chat.Chat_SendMessageServer) error {
 	return nil
 }
 
-func (s *chatServer) ListRooms(ctx context.Context, empty *emptypb.Empty) (*chat.ListRoomsReply, error) {
+func (s *chatServer) ListRooms(ctx context.Context, _ *emptypb.Empty) (*chat.ListRoomsReply, error) {
 	var rooms []string
 
 	s.Lock()

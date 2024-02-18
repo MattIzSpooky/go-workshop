@@ -14,7 +14,8 @@ service Chat {
   rpc GetChatUsers(ChatUsersRequest) returns (ChatUsersReply) {}
   rpc ListRooms(google.protobuf.Empty) returns (ListRoomsReply) {}
 
-  rpc JoinRoom(JoinRoomRequest) returns (stream ChatMessage) {}
+  rpc JoinRoom(JoinRoomRequest) returns (SuccessReply) {}
+  rpc ListenToRoom(JoinRoomRequest) returns (stream ChatMessage) {}
   rpc SendMessage(stream ChatMessage) returns (MessageAck) {}
   rpc DisconnectFromRoom(DisconnectFromRoomMessage) returns (SuccessReply) {}
   rpc NotifyDisconnect(NotifyDisconnectRequest) returns (SuccessReply) {}

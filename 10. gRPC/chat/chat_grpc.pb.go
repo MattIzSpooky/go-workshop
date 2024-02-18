@@ -25,7 +25,8 @@ const _ = grpc.SupportPackageIsVersion7
 type ChatClient interface {
 	GetChatUsers(ctx context.Context, in *ChatUsersRequest, opts ...grpc.CallOption) (*ChatUsersReply, error)
 	ListRooms(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListRoomsReply, error)
-	JoinRoom(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (Chat_JoinRoomClient, error)
+	JoinRoom(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (*SuccessReply, error)
+	ListenToRoom(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (Chat_ListenToRoomClient, error)
 	SendMessage(ctx context.Context, opts ...grpc.CallOption) (Chat_SendMessageClient, error)
 	DisconnectFromRoom(ctx context.Context, in *DisconnectFromRoomMessage, opts ...grpc.CallOption) (*SuccessReply, error)
 	NotifyDisconnect(ctx context.Context, in *NotifyDisconnectRequest, opts ...grpc.CallOption) (*SuccessReply, error)
@@ -59,12 +60,21 @@ func (c *chatClient) ListRooms(ctx context.Context, in *emptypb.Empty, opts ...g
 	return out, nil
 }
 
-func (c *chatClient) JoinRoom(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (Chat_JoinRoomClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Chat_ServiceDesc.Streams[0], "/chat.Chat/JoinRoom", opts...)
+func (c *chatClient) JoinRoom(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (*SuccessReply, error) {
+	out := new(SuccessReply)
+	err := c.cc.Invoke(ctx, "/chat.Chat/JoinRoom", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &chatJoinRoomClient{stream}
+	return out, nil
+}
+
+func (c *chatClient) ListenToRoom(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (Chat_ListenToRoomClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Chat_ServiceDesc.Streams[0], "/chat.Chat/ListenToRoom", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &chatListenToRoomClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -74,16 +84,16 @@ func (c *chatClient) JoinRoom(ctx context.Context, in *JoinRoomRequest, opts ...
 	return x, nil
 }
 
-type Chat_JoinRoomClient interface {
+type Chat_ListenToRoomClient interface {
 	Recv() (*ChatMessage, error)
 	grpc.ClientStream
 }
 
-type chatJoinRoomClient struct {
+type chatListenToRoomClient struct {
 	grpc.ClientStream
 }
 
-func (x *chatJoinRoomClient) Recv() (*ChatMessage, error) {
+func (x *chatListenToRoomClient) Recv() (*ChatMessage, error) {
 	m := new(ChatMessage)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -167,7 +177,8 @@ func (c *chatClient) CheckRoomExists(ctx context.Context, in *CheckRoomExistsMes
 type ChatServer interface {
 	GetChatUsers(context.Context, *ChatUsersRequest) (*ChatUsersReply, error)
 	ListRooms(context.Context, *emptypb.Empty) (*ListRoomsReply, error)
-	JoinRoom(*JoinRoomRequest, Chat_JoinRoomServer) error
+	JoinRoom(context.Context, *JoinRoomRequest) (*SuccessReply, error)
+	ListenToRoom(*JoinRoomRequest, Chat_ListenToRoomServer) error
 	SendMessage(Chat_SendMessageServer) error
 	DisconnectFromRoom(context.Context, *DisconnectFromRoomMessage) (*SuccessReply, error)
 	NotifyDisconnect(context.Context, *NotifyDisconnectRequest) (*SuccessReply, error)
@@ -186,8 +197,11 @@ func (UnimplementedChatServer) GetChatUsers(context.Context, *ChatUsersRequest) 
 func (UnimplementedChatServer) ListRooms(context.Context, *emptypb.Empty) (*ListRoomsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRooms not implemented")
 }
-func (UnimplementedChatServer) JoinRoom(*JoinRoomRequest, Chat_JoinRoomServer) error {
-	return status.Errorf(codes.Unimplemented, "method JoinRoom not implemented")
+func (UnimplementedChatServer) JoinRoom(context.Context, *JoinRoomRequest) (*SuccessReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method JoinRoom not implemented")
+}
+func (UnimplementedChatServer) ListenToRoom(*JoinRoomRequest, Chat_ListenToRoomServer) error {
+	return status.Errorf(codes.Unimplemented, "method ListenToRoom not implemented")
 }
 func (UnimplementedChatServer) SendMessage(Chat_SendMessageServer) error {
 	return status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
@@ -253,24 +267,42 @@ func _Chat_ListRooms_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Chat_JoinRoom_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _Chat_JoinRoom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JoinRoomRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServer).JoinRoom(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chat.Chat/JoinRoom",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServer).JoinRoom(ctx, req.(*JoinRoomRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Chat_ListenToRoom_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(JoinRoomRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ChatServer).JoinRoom(m, &chatJoinRoomServer{stream})
+	return srv.(ChatServer).ListenToRoom(m, &chatListenToRoomServer{stream})
 }
 
-type Chat_JoinRoomServer interface {
+type Chat_ListenToRoomServer interface {
 	Send(*ChatMessage) error
 	grpc.ServerStream
 }
 
-type chatJoinRoomServer struct {
+type chatListenToRoomServer struct {
 	grpc.ServerStream
 }
 
-func (x *chatJoinRoomServer) Send(m *ChatMessage) error {
+func (x *chatListenToRoomServer) Send(m *ChatMessage) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -388,6 +420,10 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Chat_ListRooms_Handler,
 		},
 		{
+			MethodName: "JoinRoom",
+			Handler:    _Chat_JoinRoom_Handler,
+		},
+		{
 			MethodName: "DisconnectFromRoom",
 			Handler:    _Chat_DisconnectFromRoom_Handler,
 		},
@@ -406,8 +442,8 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "JoinRoom",
-			Handler:       _Chat_JoinRoom_Handler,
+			StreamName:    "ListenToRoom",
+			Handler:       _Chat_ListenToRoom_Handler,
 			ServerStreams: true,
 		},
 		{
