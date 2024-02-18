@@ -1,4 +1,4 @@
-## Structs
+## 3. Structs & Visibility
 
  TODO:
 

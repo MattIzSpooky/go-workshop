@@ -1,4 +1,4 @@
-package queue
+package structures
 
 import "sync"
 
@@ -11,7 +11,6 @@ func (q *Queue[T]) Enqueue(item T) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	q.items = append(q.items, item)
-
 }
 
 func (q *Queue[T]) Dequeue() T {
@@ -30,5 +29,5 @@ func (q *Queue[T]) IsEmpty() bool {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	return len(q.items) > 0
+	return len(q.items) == 0
 }

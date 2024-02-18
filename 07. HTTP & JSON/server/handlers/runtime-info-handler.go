@@ -22,7 +22,14 @@ func convertBytesToMiB(amountOfBytes uint64) uint64 {
 	return amountOfBytes / 1024 / 1024
 }
 
+const allowedMethodForRuntimeInfoHandler = "GET"
+
 func (h *Handler) RuntimeInfoHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != allowedMethodForRuntimeInfoHandler {
+		_, _ = writeMethodNotAllowed(w, allowedMethodForRuntimeInfoHandler)
+		return
+	}
+
 	h.log.WriteInfo("Getting runtime info..")
 
 	var m runtime.MemStats

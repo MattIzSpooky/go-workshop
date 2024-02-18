@@ -11,7 +11,13 @@ type Message struct {
 	Message string `json:"message"`
 }
 
+const allowedMethodForHelloHandler = "GET"
+
 func (h *Handler) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != allowedMethodForHelloHandler {
+		_, _ = writeMethodNotAllowed(w, allowedMethodForHelloHandler)
+		return
+	}
 	h.log.WriteInfo("Sending hello!")
 
 	response, err := json.Marshal(Message{Message: "hello world!"})

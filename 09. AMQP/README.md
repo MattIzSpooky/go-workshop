@@ -1,4 +1,4 @@
-## 8. AMQP
+## 9. AMQP
 
 Uses ActiveMQ Artemis because... TODO
 
