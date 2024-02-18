@@ -216,6 +216,14 @@ func (s *chatServer) DisconnectFromRoom(ctx context.Context, disconnectFromRoomM
 	close(currentUser.msgChannel)
 	currRoom.users = slices.Delete(currRoom.users, usersIdx, usersIdx+1)
 
+	if len(currRoom.users) == 0 {
+		s.printDebug(fmt.Sprintf("No more users in room [%s]. Deleting room..."))
+		s.Lock()
+		s.rooms = slices.Delete(s.rooms, idx, idx+1)
+		s.Unlock()
+		s.printDebug(fmt.Sprintf("Room [%s] deleted."))
+	}
+
 	currRoom.lock.Unlock()
 
 	return &chat.SuccessReply{Success: true}, nil
