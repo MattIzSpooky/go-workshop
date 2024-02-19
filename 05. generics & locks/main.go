@@ -16,8 +16,7 @@ func main() {
 	queue.Enqueue(5)
 
 	for !queue.IsEmpty() {
-		item := queue.Dequeue()
-		fmt.Println(item)
+		queue.Dequeue()
 	}
 
 	fmt.Println("Stack example")
@@ -30,7 +29,6 @@ func main() {
 	stack.Push(5)
 
 	for !stack.IsEmpty() {
-		item := stack.Pop()
-		fmt.Println(item)
+		stack.Pop()
 	}
 }

@@ -1,6 +1,9 @@
 package structures
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 type Queue[T any] struct {
 	items []T
@@ -10,6 +13,7 @@ type Queue[T any] struct {
 func (q *Queue[T]) Enqueue(item T) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
+	fmt.Println(fmt.Sprintf("Enqueue: [%v]", item))
 	q.items = append(q.items, item)
 }
 
@@ -17,12 +21,13 @@ func (q *Queue[T]) Dequeue() T {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	x := q.items[0]
+	item := q.items[0]
+	fmt.Println(fmt.Sprintf("Dequeue: [%v]", item))
 
 	// Discard top element
 	q.items = q.items[1:]
 
-	return x
+	return item
 }
 
 func (q *Queue[T]) IsEmpty() bool {

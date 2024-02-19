@@ -27,4 +27,7 @@ func main() {
 	}
 
 	jake.MakeNoise()
+
+	clonedCat := jake.Clone()
+	fmt.Println(fmt.Sprintf("Cloned cat!! %v", clonedCat))
 }

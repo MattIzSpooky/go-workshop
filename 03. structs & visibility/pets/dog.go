@@ -10,12 +10,14 @@ type Dog struct {
 	requiresACookie bool
 }
 
+// Private values cannot be set from the outside. A common pattern is exposing a "New" function.
 func NewDog(name string) *Dog {
 	return &Dog{
 		Pet:             Pet{name: name},
 		requiresACookie: false}
 }
 
+// Interfaces are implicitly implemented. The NoiseMaker interface is implemented here.
 func (d *Dog) MakeNoise() {
 	d.requiresACookie = generateBool()
 
@@ -26,6 +28,7 @@ func (d *Dog) MakeNoise() {
 	}
 }
 
+// Interfaces are implicitly implemented. The Walk interface is implemented here.
 func (d *Dog) Walk() error {
 	if d.requiresACookie {
 		return errors.New(fmt.Sprintf("Dog with name [%s] does not want to walk unless they get a cookie", d.GetName()))
@@ -40,4 +43,11 @@ func (d *Dog) GiveCookie() {
 	d.requiresACookie = false
 
 	fmt.Println(fmt.Sprintf("The monster [%s] has been fed...", d.GetName()))
+}
+
+func (c *Dog) Clone() *Dog {
+	return &Dog{
+		Pet:             Pet{name: c.name},
+		requiresACookie: c.requiresACookie,
+	}
 }

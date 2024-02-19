@@ -10,12 +10,12 @@ A regular function call would be:
 The same call but ran in a Go routine would be:
 ```go func()```
 
-Careful though, ***do not start a go routine without knowing when or if it will end. This will result in memory leaks.***
+Careful though, ***do not start a go routine without knowing when or if it will end. This will result in memory leak-like problems.***
 
 [This article has more information on this](https://dave.cheney.net/2016/12/22/never-start-a-goroutine-without-knowing-how-it-will-stop)
 
 ### Communicating between Go routines
 Communicating between go routines is done through Channels. 
-Imagine a channel as a pipe you can send data over.
+Imagine a channel as a pipe you can send data over, it's that simple.
 
-TODO: expand
+See the code for more information.
