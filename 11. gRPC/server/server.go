@@ -46,6 +46,8 @@ func (s *chatServer) ListenToRoom(joinRequest *chat.JoinRoomRequest, msgStream c
 	user := &currRoom.users[usersIdx]
 	s.Unlock()
 
+	// TODO: Debug if this go routine closes.
+
 	for {
 		select {
 		case <-msgStream.Context().Done():
@@ -127,6 +129,7 @@ func (s *chatServer) SendMessage(msgStream chat.Chat_SendMessageServer) error {
 
 	go func() {
 		// When a message comes in, send it to all recipients in the room
+		// TODO: Debug if this go routine closes.
 		for _, user := range currRoom.users {
 			user.msgChannel <- msg
 		}

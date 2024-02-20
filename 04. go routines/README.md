@@ -19,3 +19,6 @@ Communicating between go routines is done through Channels.
 Imagine a channel as a pipe you can send data over, it's that simple.
 
 See the code for more information.
+
+Channels can be quite deep. There are buffered and unbuffered channels.
+You can also define whether a function can only read or write to a channel
