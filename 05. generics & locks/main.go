@@ -2,8 +2,14 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"workshop/generics+locks/structures"
 )
+
+type Person struct {
+	ID   int
+	Name string
+}
 
 func main() {
 	fmt.Println("Queue example")
@@ -30,5 +36,33 @@ func main() {
 
 	for !stack.IsEmpty() {
 		stack.Pop()
+	}
+
+	fmt.Println("Linked list example")
+	linkedList := structures.LinkedList[*Person]{}
+	linkedList.Insert(createPerson("Matthijs"))
+	linkedList.Insert(createPerson("Joseph"))
+	linkedList.Insert(createPerson("Jake"))
+	linkedList.Insert(createPerson("Vincent"))
+	linkedList.Insert(createPerson("Joe"))
+
+	linkedList.Print()
+
+	resultFound := linkedList.FindFunc(func(p *Person) bool {
+		return p.Name == "Jake"
+	})
+
+	resultNotFound := linkedList.FindFunc(func(p *Person) bool {
+		return p.Name == "Alex"
+	})
+
+	fmt.Println(fmt.Sprintf("FindFunc resultFound: %v", resultFound))
+	fmt.Println(fmt.Sprintf("FindFunc resultNotFound: %v", resultNotFound))
+}
+
+func createPerson(name string) *Person {
+	return &Person{
+		ID:   rand.Int(),
+		Name: name,
 	}
 }

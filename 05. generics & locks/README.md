@@ -1,3 +1,6 @@
-# 5. Generics & Locks
+## 5. Generics & Locks
 
-TODO:
+Like Java and C#, Golang supports generics. However, unlike C# the 
+
+
+https://go.dev/blog/intro-generics
