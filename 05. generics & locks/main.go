@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"workshop/generics+locks/algorithms"
 	"workshop/generics+locks/structures"
 )
 
 type Person struct {
-	ID   int
+	id   int
 	Name string
 }
 
@@ -58,11 +59,42 @@ func main() {
 
 	fmt.Println(fmt.Sprintf("FindFunc resultFound: %v", resultFound))
 	fmt.Println(fmt.Sprintf("FindFunc resultNotFound: %v", resultNotFound))
+
+	fmt.Println()
+
+	fmt.Println("Binary search & Quick sort")
+	myList := algorithms.List[Person]{}
+
+	myList.Add(createPersonWithId(23, "Matthijs"))
+	myList.Add(createPersonWithId(1, "Alex"))
+	myList.Add(createPersonWithId(93, "Joseph"))
+	myList.Add(createPersonWithId(10203, "Jake"))
+
+	myList.Print()
+	fmt.Println("And now we sort!")
+	myList.Sort()
+	myList.Print()
+
+	result := myList.Search(23)
+
+	fmt.Println(fmt.Sprintf("Search result: [%v]", *result))
+
+}
+
+func (p Person) ID() int {
+	return p.id
 }
 
 func createPerson(name string) *Person {
 	return &Person{
-		ID:   rand.Int(),
+		id:   rand.Int(),
+		Name: name,
+	}
+}
+
+func createPersonWithId(id int, name string) *Person {
+	return &Person{
+		id:   id,
 		Name: name,
 	}
 }
