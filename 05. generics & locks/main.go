@@ -2,19 +2,15 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"workshop/generics+locks/algorithms"
+	"workshop/generics+locks/person"
 	"workshop/generics+locks/structures"
 )
 
-type Person struct {
-	id   int
-	Name string
-}
-
 func main() {
-	fmt.Println("Queue example")
 
+	fmt.Println("Queue example")
+	fmt.Println()
 	queue := structures.Queue[int]{}
 	queue.Enqueue(1)
 	queue.Enqueue(2)
@@ -26,7 +22,9 @@ func main() {
 		queue.Dequeue()
 	}
 
+	fmt.Println()
 	fmt.Println("Stack example")
+	fmt.Println()
 
 	stack := structures.Stack[int]{}
 	stack.Push(1)
@@ -39,21 +37,24 @@ func main() {
 		stack.Pop()
 	}
 
+	fmt.Println()
 	fmt.Println("Linked list example")
-	linkedList := structures.LinkedList[*Person]{}
-	linkedList.Insert(createPerson("Matthijs"))
-	linkedList.Insert(createPerson("Joseph"))
-	linkedList.Insert(createPerson("Jake"))
-	linkedList.Insert(createPerson("Vincent"))
-	linkedList.Insert(createPerson("Joe"))
+	fmt.Println()
+
+	linkedList := structures.LinkedList[*person.Person]{}
+	linkedList.Insert(person.New("Matthijs"))
+	linkedList.Insert(person.New("Joseph"))
+	linkedList.Insert(person.New("Jake"))
+	linkedList.Insert(person.New("Vincent"))
+	linkedList.Insert(person.New("Joe"))
 
 	linkedList.Print()
 
-	resultFound := linkedList.FindFunc(func(p *Person) bool {
+	resultFound := linkedList.FindFunc(func(p *person.Person) bool {
 		return p.Name == "Jake"
 	})
 
-	resultNotFound := linkedList.FindFunc(func(p *Person) bool {
+	resultNotFound := linkedList.FindFunc(func(p *person.Person) bool {
 		return p.Name == "Alex"
 	})
 
@@ -61,40 +62,38 @@ func main() {
 	fmt.Println(fmt.Sprintf("FindFunc resultNotFound: %v", resultNotFound))
 
 	fmt.Println()
-
 	fmt.Println("Binary search & Quick sort")
-	myList := algorithms.List[Person]{}
+	fmt.Println()
 
-	myList.Add(createPersonWithId(23, "Matthijs"))
-	myList.Add(createPersonWithId(1, "Alex"))
-	myList.Add(createPersonWithId(93, "Joseph"))
-	myList.Add(createPersonWithId(10203, "Jake"))
+	myList := algorithms.List[person.Person]{}
+
+	myList.Add(person.NewWithId(1, "Matthijs"))
+	myList.Add(person.NewWithId(2032, "Jerome"))
+	myList.Add(person.NewWithId(23, "Alex"))
+	myList.Add(person.NewWithId(93, "Joseph"))
+	myList.Add(person.NewWithId(10203, "Jake"))
+	myList.Add(person.NewWithId(99, "Blake"))
+	myList.Add(person.NewWithId(6372, "Rosa"))
+	myList.Add(person.NewWithId(938183, "Vera"))
+	myList.Add(person.NewWithId(2923, "Vince"))
+	myList.Add(person.NewWithId(211, "Ashley"))
 
 	myList.Print()
+
+	fmt.Println("Everything was inserted in order!")
+	fmt.Println("And now we randomize!")
+
+	myList.Randomize()
+	myList.Print()
+
 	fmt.Println("And now we sort!")
+
 	myList.Sort()
 	myList.Print()
 
-	result := myList.Search(23)
+	fmt.Println("Now let us do a search: ")
+	result := myList.Search(10203)
 
 	fmt.Println(fmt.Sprintf("Search result: [%v]", *result))
 
-}
-
-func (p Person) ID() int {
-	return p.id
-}
-
-func createPerson(name string) *Person {
-	return &Person{
-		id:   rand.Int(),
-		Name: name,
-	}
-}
-
-func createPersonWithId(id int, name string) *Person {
-	return &Person{
-		id:   id,
-		Name: name,
-	}
 }

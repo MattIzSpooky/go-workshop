@@ -7,7 +7,7 @@ func (l *List[T]) quicksort(leftIndex int, rightIndex int) {
 	}
 
 	// Take median of indexes, rounded to lower
-	pivotIndex := leftIndex + rightIndex/2
+	pivotIndex := (leftIndex + rightIndex) / 2
 
 	pivot := l.partition(pivotIndex, leftIndex, rightIndex)
 

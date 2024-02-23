@@ -14,19 +14,18 @@ type List[T IDer] struct {
 }
 
 func (l *List[T]) Add(item *T) {
-	// I could implement a binary-search like way to add an item, but I am being lazy here.
-	l.items = append(l.items, item)
+	l.binaryAdd(item)
 }
 
 func (l *List[T]) Sort() {
 	leftIndex := 0
-	rightIndex := len(l.items)
+	rightIndex := len(l.items) - 1
 
 	if rightIndex < 1 {
 		return // No need to sort.
 	}
 
-	l.quicksort(leftIndex, rightIndex-1)
+	l.quicksort(leftIndex, rightIndex)
 }
 
 func (l *List[T]) Search(id int) *T {
@@ -35,7 +34,8 @@ func (l *List[T]) Search(id int) *T {
 
 func (l *List[T]) Print() {
 	for i, item := range l.items {
-		fmt.Println(fmt.Sprintf("Position: [%d] -> %v", i, *item))
+		// Fun fact: Golang supports emojis as it its fully UTF-8.
+		fmt.Println(fmt.Sprintf("Position: [%d] ➔️ %v", i, *item))
 	}
 }
 func (l *List[T]) Randomize() {
