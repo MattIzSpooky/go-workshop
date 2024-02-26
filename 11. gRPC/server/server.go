@@ -14,7 +14,7 @@ import (
 	"slices"
 	"sync"
 	"time"
-	"workshop/grpc/chat"
+	"workshop/grpc/generated/chat"
 )
 
 var debugEnabled = flag.Bool("debug", false, "Enabled/disable debug logging")

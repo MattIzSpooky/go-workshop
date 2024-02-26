@@ -57,6 +57,8 @@ https://go.dev/doc/effective_go#embedding
 
 This example contains both visibility, embedding and interfaces.
 
+See [main.go](main.go) for a full example.
+
 ### Pointers
 Go can use pointers, however, be careful when using them. 
 Due to Go's nature to easily spin up threads it is preferred to copy values instead of referring to them.
@@ -69,3 +71,4 @@ You can read more here: https://go.dev/doc/effective_go#pointers_vs_values
 
 Luckily, you do not have to clean up pointers yourself. Once all references to an object are lost, 
 Go will clean it right up.
+

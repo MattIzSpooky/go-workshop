@@ -1,20 +1,41 @@
 # 10. gRPC
 
+[gRPC](https://grpc.io/) is a way of communicating over HTTP, like [REST](https://restfulapi.net/), [SOAP](https://www.indeed.com/career-advice/career-development/what-is-soap-api) and [GraphQL](https://graphql.org/). 
+It allows for [rpc](https://en.wikipedia.org/wiki/Remote_procedure_call) calls over HTTP/2 using protobuf (default) or json.
 
-TODO: What is gRPC?
+It offers many benefits over the other methods of communication, some of which are speed and consistency. 
+It being powered by [protobuf](https://protobuf.dev/overview/) by default makes it pretty fast as it is a binary format.
+This has some benefits when it comes to message sizes, un- & marshalling performance compared to REST/GraphQL (JSON) and SOAP (XML, the horror oh the horror 😰).
+My favorite benefit is consistency. A protobuf file, like seen [here](./chat.proto) declares how should be communicated with a gRPC server.
+Code is generated from one of those files, be it C#, Java, C++ or Go. It does not matter, they can communicate with each other through gRPC.
+A protobuf file is kind of like a [WSDL](https://www.soapui.org/docs/soap-and-wsdl/working-with-wsdls/) but without the pain associated with it and SOAP in general.
 
-TODO: write comments in code
-TODO: explain simple gRPC
-TODO: explain streaming gRPC
+Another neat feature of gRPC is the built-in support for streaming. gRPC supports:
+- Client-side streaming
+- Server-side streaming
+- Bidirectional streaming (client & server)
 
-TODO: explain the example applications
-TODO: explain purpose of the examples
+This example contains a chat application. Both the [server](./server) and the [client](./client).
+Messages are being streamed to the server and the server will broadcast a received message to other users in the same chat room.
+Is this a perfect example? Not really, things can probably be cleaned up or written in another way, but I had fun writing it and learned a lot about gRPC and its quirks. 
+It also shows one of gRPCs strongest benefits, streaming. But it does not neglect simple gRPC calls.
 
-TODO: link gRPC website
+To run the applications you first need to follow the [prerequisites section in the quickstart guide guide on the grpc website](https://grpc.io/docs/languages/go/quickstart/#prerequisites).
 
-Prerequisites:
-https://grpc.io/docs/languages/go/quickstart/
+To (re)generate the code, run the following command:
 
-protoc --go_out=. --go_opt=paths=source_relative \
---go-grpc_out=. --go-grpc_opt=paths=source_relative \
-chat/chat.proto
+```bash
+protoc --go_out=generated --go_opt=paths=import \
+    --go-grpc_out=generated --go-grpc_opt=paths=import \
+    proto/chat.proto
+```
+
+Running the server:
+```bash
+ go run server/server.go
+```
+
+Running the client:
+```bash
+ go run client/client.go -username matthijs
+```

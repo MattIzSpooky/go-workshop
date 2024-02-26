@@ -16,7 +16,7 @@ import (
 	"slices"
 	"syscall"
 	"time"
-	"workshop/grpc/chat"
+	"workshop/grpc/generated/chat"
 )
 
 var username = flag.String("username", "default", "Username of person using the chat")

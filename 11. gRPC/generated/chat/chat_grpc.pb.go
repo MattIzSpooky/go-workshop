@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.25.2
-// source: chat/chat.proto
+// source: proto/chat.proto
 
 package chat
 
@@ -23,14 +23,22 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChatClient interface {
+	// This is a simple gRPC call to get the current users
 	GetChatUsers(ctx context.Context, in *ChatUsersRequest, opts ...grpc.CallOption) (*ChatUsersReply, error)
+	// An empty gRPC is kind of.. weird? You have to use an "empty" object as a parameter.
 	ListRooms(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListRoomsReply, error)
 	JoinRoom(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (*SuccessReply, error)
+	// This asks the server to set up a stream. Server -> Client
 	ListenToRoom(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (Chat_ListenToRoomClient, error)
+	// This sends messages to the server. Client -> Server
 	SendMessage(ctx context.Context, opts ...grpc.CallOption) (Chat_SendMessageClient, error)
+	// Remove a user from the room.
 	DisconnectFromRoom(ctx context.Context, in *DisconnectFromRoomMessage, opts ...grpc.CallOption) (*SuccessReply, error)
+	// Notify the server that you have disconnected
 	NotifyDisconnect(ctx context.Context, in *NotifyDisconnectRequest, opts ...grpc.CallOption) (*SuccessReply, error)
+	// Notify the server that you have joined
 	NotifyJoin(ctx context.Context, in *NotifyJoinMessage, opts ...grpc.CallOption) (*SuccessReply, error)
+	// Poll (could have been cleaner i think) to check if a room exists.
 	CheckRoomExists(ctx context.Context, in *CheckRoomExistsMessage, opts ...grpc.CallOption) (*SuccessReply, error)
 }
 
@@ -175,14 +183,22 @@ func (c *chatClient) CheckRoomExists(ctx context.Context, in *CheckRoomExistsMes
 // All implementations must embed UnimplementedChatServer
 // for forward compatibility
 type ChatServer interface {
+	// This is a simple gRPC call to get the current users
 	GetChatUsers(context.Context, *ChatUsersRequest) (*ChatUsersReply, error)
+	// An empty gRPC is kind of.. weird? You have to use an "empty" object as a parameter.
 	ListRooms(context.Context, *emptypb.Empty) (*ListRoomsReply, error)
 	JoinRoom(context.Context, *JoinRoomRequest) (*SuccessReply, error)
+	// This asks the server to set up a stream. Server -> Client
 	ListenToRoom(*JoinRoomRequest, Chat_ListenToRoomServer) error
+	// This sends messages to the server. Client -> Server
 	SendMessage(Chat_SendMessageServer) error
+	// Remove a user from the room.
 	DisconnectFromRoom(context.Context, *DisconnectFromRoomMessage) (*SuccessReply, error)
+	// Notify the server that you have disconnected
 	NotifyDisconnect(context.Context, *NotifyDisconnectRequest) (*SuccessReply, error)
+	// Notify the server that you have joined
 	NotifyJoin(context.Context, *NotifyJoinMessage) (*SuccessReply, error)
+	// Poll (could have been cleaner i think) to check if a room exists.
 	CheckRoomExists(context.Context, *CheckRoomExistsMessage) (*SuccessReply, error)
 	mustEmbedUnimplementedChatServer()
 }
@@ -452,5 +468,5 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "chat/chat.proto",
+	Metadata: "proto/chat.proto",
 }

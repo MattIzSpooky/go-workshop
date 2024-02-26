@@ -22,3 +22,5 @@ See the code for more information.
 
 Channels can be quite deep. There are buffered and unbuffered channels.
 You can also define whether a function can only read or write to a channel
+
+See [main.go](main.go) for a full example.

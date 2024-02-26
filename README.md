@@ -16,6 +16,7 @@ TODO: Companies & software using Go
 
 This repository contains runnable examples of a few different topics. 
 Starting with the basics and leading up to more advanced applications.
+My personal favorites being the HTTP, SQL and gRPC examples.
 
 ### Basics
 - [1. Hello World](./01.%20hello%20world)

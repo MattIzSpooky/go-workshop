@@ -6,6 +6,7 @@ import (
 	"workshop/http+json/server/log"
 )
 
+// A simple logging middleware.
 func LogMiddleware(next http.Handler, log *log.ServerLogger) http.HandlerFunc {
 	amountOfRequestThatCameIn := 0
 	amountOfRequestThatWentOut := 0

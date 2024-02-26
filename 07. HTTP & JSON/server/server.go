@@ -12,12 +12,14 @@ import (
 	"workshop/http+json/server/log"
 )
 
+// Create our own http server object based on the standard library one.
 type HTTPServer struct {
 	http.Server
 	log         *log.ServerLogger
 	fullAddress string
 }
 
+// Initiates an HTTP server.
 func NewServer() *HTTPServer {
 	var fullAddress string
 	port := os.Getenv("PORT")
@@ -32,6 +34,7 @@ func NewServer() *HTTPServer {
 		fullAddress = fmt.Sprintf(":%s", port)
 	}
 
+	// Initiate the http server
 	server := &HTTPServer{
 		Server: http.Server{
 			Addr:         fullAddress,
@@ -39,20 +42,23 @@ func NewServer() *HTTPServer {
 			WriteTimeout: 10 * time.Second,
 			IdleTimeout:  15 * time.Second,
 		},
-		log:         log.NewLogger(),
+		log:         log.NewLogger(), // we use our own custom logger.
 		fullAddress: fullAddress,
 	}
 
+	// Register the HTTP handlers.
 	server.registerHandlers()
 
 	return server
 }
 
+// Listen to requests.
 func (s *HTTPServer) Serve() error {
 	const runStringTemplate = "Running HTTP server on: http://%s"
 
 	s.log.WriteInfo(fmt.Sprintf(runStringTemplate, s.fullAddress))
 
+	// This here does the magic, this exposes the handlers so that they can be called through HTTP.
 	if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		s.log.WriteErrorString(fmt.Sprintf("Could not listen on %s: %v\n", s.Addr, err.Error()))
 
@@ -64,11 +70,14 @@ func (s *HTTPServer) Serve() error {
 func (s *HTTPServer) GracefulShutdown() error {
 	s.log.WriteInfo("Server is shutting down")
 
+	// Create a deadline for exiting the server. 15 seconds.
+	// This is for shutting down the server.
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	s.SetKeepAlivesEnabled(false)
 
+	// s.Shutdown will try to gracefully clean up and handle the last requests.
 	if err := s.Shutdown(ctx); err != nil {
 		s.log.WriteErrorString(fmt.Sprintf("Could not gracefully shutdown the server: %v\n", err.Error()))
 		return err
@@ -77,18 +86,4 @@ func (s *HTTPServer) GracefulShutdown() error {
 	s.log.WriteInfo("Server has successfully closed down")
 
 	return nil
-}
-
-func (s *HTTPServer) writeError(w http.ResponseWriter, text string, statusCode int) {
-	w.WriteHeader(statusCode)
-	_, err := w.Write([]byte(fmt.Sprintf(`{ "error": "%s" }`, text)))
-
-	if err != nil {
-		s.log.WriteErrorString(fmt.Sprintf("Could not write error: %s", err.Error()))
-	}
-}
-
-func (s *HTTPServer) Crash(w http.ResponseWriter, reason error) {
-	s.log.WriteErrorObject(reason)
-	w.WriteHeader(http.StatusInternalServerError)
 }

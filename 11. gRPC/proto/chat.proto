@@ -3,23 +3,32 @@ syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "workshop/chat";
-option java_multiple_files = true;
-option java_package = "com.matthijs.kropholler.chat";
+option go_package = "/chat"; // this tells the code generator where to put the go code.
+option java_multiple_files = true; // this tells the generator to generate multiple Java files, if Java is used.
+option java_package = "com.matthijs.kropholler.rpc.chat";
 option java_outer_classname = "Chat";
 
+// Like Java, C# or C++. Protobuf supports namespacing.
 package chat;
 
 service Chat {
+  // This is a simple gRPC call to get the current users
   rpc GetChatUsers(ChatUsersRequest) returns (ChatUsersReply) {}
+  // An empty gRPC is kind of.. weird? You have to use an "empty" object as a parameter.
   rpc ListRooms(google.protobuf.Empty) returns (ListRoomsReply) {}
 
   rpc JoinRoom(JoinRoomRequest) returns (SuccessReply) {}
+  // This asks the server to set up a stream. Server -> Client
   rpc ListenToRoom(JoinRoomRequest) returns (stream ChatMessage) {}
+  // This sends messages to the server. Client -> Server
   rpc SendMessage(stream ChatMessage) returns (MessageAck) {}
+  // Remove a user from the room.
   rpc DisconnectFromRoom(DisconnectFromRoomMessage) returns (SuccessReply) {}
+  // Notify the server that you have disconnected
   rpc NotifyDisconnect(NotifyDisconnectRequest) returns (SuccessReply) {}
+  // Notify the server that you have joined
   rpc NotifyJoin(NotifyJoinMessage) returns (SuccessReply) {}
+  // Poll (could have been cleaner i think) to check if a room exists.
   rpc CheckRoomExists(CheckRoomExistsMessage) returns (SuccessReply) {}
 }
 message CheckRoomExistsMessage {
@@ -46,7 +55,7 @@ message SuccessReply {
 }
 
 message ListRoomsReply {
-  repeated string rooms = 1;
+  repeated string rooms = 1; // repeated = list. So this is a list of strings.
 }
 
 message JoinRoomRequest {
