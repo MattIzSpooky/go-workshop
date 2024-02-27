@@ -15,7 +15,7 @@ Another neat feature of gRPC is the built-in support for streaming. gRPC support
 - Server-side streaming
 - Bidirectional streaming (client & server)
 
-This example contains a chat application. Both the [server](./server) and the [client](./client-app).
+This example contains a chat application. Both the [server](./server-app) and the [client](./client-app).
 Messages are being streamed to the server and the server will broadcast a received message to other users in the same chat room.
 Is this a perfect example? Not really, things can probably be cleaned up or written in another way, but I had fun writing it and learned a lot about gRPC and its quirks. 
 It also shows one of gRPCs strongest benefits, streaming. But it does not neglect simple gRPC calls.
@@ -30,14 +30,5 @@ protoc --go_out=generated --go_opt=paths=import \
     proto/chat.proto
 ```
 
-**TODO: Clean up these commands below.**
-
-Running the server:
-```bash
- go run server/server.go
-```
-
-Running the client:
-```bash
- go run client-app/client-app.go -username matthijs
-```
+Both the client and the server can run locally. They just need to be compiled first. 
+cd to each folder and run `go build .`

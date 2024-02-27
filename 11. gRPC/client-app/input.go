@@ -1,10 +1,54 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/fatih/color"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"slices"
+	"workshop/grpc/generated/chat"
 )
+
+func queryRoomFromAvailableRooms(grpcClient chat.ChatClient, ctx context.Context) (string, error) {
+	listRoomsReply, err := grpcClient.ListRooms(ctx, &emptypb.Empty{})
+
+	if err != nil {
+		return "", err
+	}
+
+	availableRoomsLength := len(listRoomsReply.Rooms)
+
+	room := defaultRoomName
+
+	if availableRoomsLength > 0 {
+		printRooms(listRoomsReply.Rooms)
+		roomIdx, err := queryUserForRoom(availableRoomsLength)
+
+		exitOnError(err)
+
+		// if room exists, ask user if it is okay to join it.
+		if roomIdx != -1 {
+			usersInChatReply, err := grpcClient.GetChatUsers(ctx, &chat.ChatUsersRequest{Room: room})
+			if err != nil {
+				panic(fmt.Sprintf("Error fetching users from room: [%s]. Error -> %s", room, err.Error()))
+			}
+
+			printRoomUsers(usersInChatReply.GetUsers())
+			room, err = queryExistingRoom(listRoomsReply.Rooms[roomIdx])
+		} else {
+			room, err = queryRoomNameFromUser(listRoomsReply.Rooms)
+		}
+
+	} else {
+		color.Magenta(fmt.Sprintf("There are currently no rooms. Attempting to create and join room: [%s]", room))
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	return room, nil
+}
 
 func queryUserForRoom(availableRoomsLength int) (int, error) {
 	var roomIdx int
@@ -27,7 +71,7 @@ func queryRoomNameFromUser(availableRooms []string) (string, error) {
 	newRoomIdx := slices.IndexFunc(availableRooms, func(r string) bool { return r == roomNameFromUser })
 
 	if newRoomIdx != -1 {
-		return "", fmt.Errorf("Room already exists [%s]. Closing client-app..", roomNameFromUser)
+		return "", fmt.Errorf("Room already exists [%s]. Closing chatroom-app..", roomNameFromUser)
 	}
 
 	return roomNameFromUser, nil

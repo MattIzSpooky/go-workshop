@@ -1,4 +1,4 @@
-package client
+package main
 
 import (
 	"bufio"
@@ -12,23 +12,14 @@ import (
 	"workshop/grpc/generated/chat"
 )
 
-type ChatClient struct {
+type Chatroom struct {
 	room           string
 	username       string
 	ctx            context.Context
 	internalClient chat.ChatClient
 }
 
-func NewChatClient(room string, username string, ctx context.Context, internalClient chat.ChatClient) ChatClient {
-	return ChatClient{
-		room:           room,
-		username:       username,
-		ctx:            ctx,
-		internalClient: internalClient,
-	}
-}
-
-func (c ChatClient) JoinAndListen() error {
+func (c Chatroom) JoinAndListen() error {
 	err := c.joinRoom()
 
 	if err != nil {
@@ -47,7 +38,7 @@ func (c ChatClient) JoinAndListen() error {
 	return err
 }
 
-func (c ChatClient) listenToMessages() {
+func (c Chatroom) listenToMessages() {
 	joinRoomRequest := chat.JoinRoomRequest{Room: c.room, Username: c.username}
 	stream, err := c.internalClient.ListenToRoom(c.ctx, &joinRoomRequest)
 
@@ -58,17 +49,15 @@ func (c ChatClient) listenToMessages() {
 	for {
 		select {
 		case <-stream.Context().Done():
+			stream.CloseSend()
 			return
 		default:
 			in, err := stream.Recv()
 			if err == io.EOF {
-				//wg.Done()
-				return
+				break
 			}
 			if err != nil {
-				//wg.Done()
-				return
-				//log.Fatalf("Failed to receive message from channel joining. \nErr: %v", err)
+				break
 			}
 
 			userString := color.GreenString(in.GetUsername())
@@ -84,9 +73,10 @@ func (c ChatClient) listenToMessages() {
 			)
 		}
 	}
+
 }
 
-func (c ChatClient) Disconnect() error {
+func (c Chatroom) Disconnect() error {
 	_, err := c.internalClient.NotifyDisconnect(c.ctx, &chat.NotifyDisconnectRequest{
 		Room:     c.room,
 		Username: c.username,
@@ -104,7 +94,7 @@ func (c ChatClient) Disconnect() error {
 	return err
 }
 
-func (c ChatClient) WriteAndSendMessages() {
+func (c Chatroom) WriteAndSendMessages() {
 	go func() {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
@@ -114,7 +104,7 @@ func (c ChatClient) WriteAndSendMessages() {
 	}()
 }
 
-func (c ChatClient) pollRoomExists() {
+func (c Chatroom) pollRoomExists() {
 	for {
 		result, _ := c.internalClient.CheckRoomExists(c.ctx, &chat.CheckRoomExistsMessage{Room: c.room})
 
@@ -126,14 +116,14 @@ func (c ChatClient) pollRoomExists() {
 	}
 }
 
-func (c ChatClient) joinRoom() error {
+func (c Chatroom) joinRoom() error {
 	joinRoomRequest := chat.JoinRoomRequest{Room: c.room, Username: c.username}
 	_, err := c.internalClient.JoinRoom(c.ctx, &joinRoomRequest)
 
 	return err
 }
 
-func (c ChatClient) sendMessage(message string) {
+func (c Chatroom) sendMessage(message string) {
 	stream, err := c.internalClient.SendMessage(c.ctx)
 	if err != nil {
 		log.Printf("Cannot send message: error: %v", err)
