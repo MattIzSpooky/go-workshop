@@ -1,4 +1,4 @@
-# 10. gRPC
+# 11. gRPC
 
 [gRPC](https://grpc.io/) is a way of communicating over HTTP, like [REST](https://restfulapi.net/), [SOAP](https://www.indeed.com/career-advice/career-development/what-is-soap-api) and [GraphQL](https://graphql.org/). 
 It allows for [rpc](https://en.wikipedia.org/wiki/Remote_procedure_call) calls over HTTP/2 using protobuf (default) or json.

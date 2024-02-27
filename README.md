@@ -4,15 +4,17 @@ Go is an open source statically typed high level language created by Google.
 
 https://github.com/golang/go
 
-TODO: Short history of Go
-
 What makes Go special you may ask? In my opinion, Go is a language that prefers simplicity to complexity to solve problems.
 It is easy to write multithreaded programs and with low memory usage too when compared to other popular languages such as JavaScript (Node.js), C# (DotNet) or Java (JVM).
 
 if you have specific questions about Go. Look here:
 https://go.dev/doc/faq
 
-TODO: Companies & software using Go
+Who uses go? Go is used by some large companies, here are a few:
+- [PayPal](https://go.dev/solutions/paypal)
+- [Microsoft](https://cloudblogs.microsoft.com/opensource/2018/02/21/go-lang-brian-ketelsen-explains-fast-growth/)
+- [Netflix](https://netflixtechblog.com/application-data-caching-using-ssds-5bf25df851ef)
+- [and more](https://go.dev/solutions/case-studies)
 
 This repository contains runnable examples of a few different topics. 
 Starting with the basics and leading up to more advanced applications.
