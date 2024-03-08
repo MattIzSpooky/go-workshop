@@ -8,3 +8,4 @@ sql:
         package: "authors_db"
         out: "authors-db"
         sql_package: "pgx/v5"
+        emit_prepared_queries: true # https://docs.sqlc.dev/en/latest/howto/prepared_query.html -> implicitly enabled with pgx/v5

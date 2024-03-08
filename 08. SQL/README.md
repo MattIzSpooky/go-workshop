@@ -43,7 +43,7 @@ For this example I have already written some queries, these can be found [here, 
 
 Last but not least, run the following command to generate the Go code from the SQL queries.
 ```bash
-$ sqlc
+$ sqlc generate
 ```
 
 [main.go](./main.go) calls the generated code.
