@@ -1,8 +1,8 @@
 ## 9. AMQP
 
 Message brokers are important for integrating with other software, or other modules within the same software.
-You put a message on a queue/topic and a subscriber of said queue or topic will read the message and do start doing this.
-This makes it relatively easy to add asynchronous behavior to the architecture of your application.
+You put a message on a queue/topic and a subscriber of said queue or topic will read the message and start doing things.
+This makes it relatively easy to add asynchronous functionalities to your application.
 
 - [What is a message broker?](https://www.ibm.com/topics/message-brokers)
 - [What is a wire protocol?](https://en.wikipedia.org/wiki/Wire_protocol)

@@ -26,7 +26,7 @@ My personal favorites being the HTTP, SQL and gRPC examples.
 - [3. Structs & visibility](./03.%20structs%20&%20visibility)
 - [4. Go routines](./04.%20go%20routines)
 - [5. Generics & locks](./05.%20generics%20&%20locks)
-- [6. Error handling](./06. error handling)
+- [6. Error handling](./06.%20error%20handling)
 
 ### Advanced
 - [7. HTTP & JSON](./07.%20HTTP%20&%20JSON)
